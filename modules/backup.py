@@ -52,6 +52,33 @@ def get_last_backup_time(to_folder):
     latest_dir = max(dirs, key=lambda x: int(x))
     return latest_dir
 
+def get_backup_times(folder):
+    """
+    获取指定文件夹下的所有备份文件的时间戳列表。
+
+    参数:
+        folder (str): 文件夹路径
+
+    返回:
+        list: 时间戳列表
+    """
+    if not os.path.exists(folder):
+        return []
+
+    # 获取所有子文件夹的名称，这些名称应该是时间戳
+    dirs = [d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d)) and d.isdigit()]
+    
+    # 如果没有找到任何时间戳文件夹，返回空列表
+    if not dirs:
+        return []
+
+    # 将字符串转换为整数并排序
+    timestamps = sorted(int(d) for d in dirs)
+    
+    # 返回格式化后的时间戳列表
+    log(f"获取到的时间戳列表: {timestamps}")
+    return [str(ts) for ts in timestamps]
+
 def calculate_file_hash(file_path, hash_algorithm='sha256'):
     """
     计算文件的哈希值

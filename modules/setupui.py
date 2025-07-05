@@ -1,7 +1,10 @@
-from PyQt5.QtWidgets import QPushButton, QLabel
-from modules.backup import backup_folder, calc_folder_size, calc_folder_num, get_last_backup_time
+from PyQt5.QtWidgets import QPushButton, QLabel, QComboBox
+from qfluentwidgets import ComboBox, SmoothScrollArea 
+from modules.backup import backup_folder, calc_folder_size, calc_folder_num, get_last_backup_time, get_backup_times
 from modules.log import log
 import datetime
+import os
+import json
 
 def setup_backup_ui(self, widget, folder):
     backup_now_button = widget.findChild(QPushButton, "backup_now_button")
@@ -41,3 +44,37 @@ def setup_backup_ui(self, widget, folder):
         backup_num.setText(f"{calc_folder_num(folder)} 次")
     else:
         log("未找到 backup_num 控件")
+        
+def setup_restore_files_ui(self, widget, folder):
+    restore_files = widget.findChild(SmoothScrollArea, "files")
+
+    if restore_files:
+        config_path = os.path.join(folder, "config.json")
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+            now_value = config.get("now")
+            log(f"config.json now: {now_value}")
+        except Exception as e:
+            log(f"读取 config.json 失败: {e}")
+    else:
+        log("未找到 files 控件")
+
+def setup_restore_ui(self, widget, folder):
+    backup_time = widget.findChild(ComboBox, "backup_time")
+
+    if backup_time:
+        times = get_backup_times(folder)
+        formatted_times = []
+        for ts in times:
+            try:
+                dt = datetime.datetime.fromtimestamp(float(ts))
+                formatted_times.append(dt.strftime("%Y年%m月%d日 %H:%M:%S"))
+            except Exception:
+                formatted_times.append(str(ts))
+        backup_time.addItems(formatted_times)
+    else:
+        log("未找到 backup_time 控件")
+
+    setup_restore_files_ui(self,widget, folder)
+    

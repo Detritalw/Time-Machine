@@ -10,7 +10,7 @@ import sys, logging, os, json
 from modules.log import log
 from modules.systems import get_system_theme_color,is_dark_theme,restart
 from modules.backup import backup_folder
-from modules.setupui import setup_backup_ui
+from modules.setupui import setup_backup_ui, setup_restore_ui
 class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
@@ -61,6 +61,7 @@ class MainWindow(FluentWindow):
         self.resize(800, 600)
 
         setup_backup_ui(self, self.backupInterface, self.config['backup-folder']['to'])
+        setup_restore_ui(self, self.restoreInterface, self.config['backup-folder']['to'])
         
         # 初始化其他功能
         # self.initOtherFunctions()
@@ -117,9 +118,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.menu = SystemTrayMenu(parent=parent)
 
         self.menu.addActions([
-            Action(FluentIcon.SYNC, '备份文件', triggered=lambda: backup_folder(self.backupInterface)),  # 使用lambda延迟调用
-            Action('🔡  访问 BBS', triggered=lambda: print("访问 BBS")),
-            Action('🔄️  重启程序', triggered=lambda: restart),
+            Action(FluentIcon.SYNC, '备份文件', triggered=lambda: backup_folder(self.backupInterface)),
             Action(FluentIcon.CANCEL_MEDIUM,'退出程序', triggered=QApplication.quit)
         ])
         self.setContextMenu(self.menu)
