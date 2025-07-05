@@ -1,0 +1,6 @@
+{
+    "backup-folder":{
+        "from": "F:\\backuptest",
+        "to": "F:\\backup"
+    }
+}
