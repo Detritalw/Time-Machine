@@ -1,10 +1,56 @@
-import json
-import os
-import shutil
-import time
-import hashlib
+import json,os,shutil,time,hashlib,datetime
 from modules.log import log
+from PyQt5.QtWidgets import QPushButton, QLabel
 
+
+def calc_folder_size(folder_path):
+    """
+    计算文件夹的总大小
+    
+    参数:
+        folder_path (str): 要计算大小的文件夹路径
+    
+    返回:
+        int: 文件夹的总大小（以字节为单位）
+    """
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(folder_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if not os.path.islink(fp):  # 跳过符号链接
+                total_size += os.path.getsize(fp)
+    return total_size
+
+def calc_folder_num(folder_path):
+    '''
+    计算文件夹中的文件夹数量 (不包括文件，也不包括子文件夹和子文件)
+    '''
+    count = 0
+    for entry in os.listdir(folder_path):
+        full_path = os.path.join(folder_path, entry)
+        if os.path.isdir(full_path):
+            count += 1
+    return count
+
+def get_last_backup_time(to_folder):
+    """
+    获取上次备份的时间戳
+    
+    参数:
+        to_folder (str): 目标文件夹路径
+    
+    返回:
+        str: 上次备份的时间戳字符串，如果没有备份则返回 '无备份记录'
+    """
+    if not os.path.exists(to_folder):
+        return '无备份记录'
+    
+    dirs = [d for d in os.listdir(to_folder) if os.path.isdir(os.path.join(to_folder, d)) and d.isdigit()]
+    if not dirs:
+        return '无备份记录'
+    
+    latest_dir = max(dirs, key=lambda x: int(x))
+    return latest_dir
 
 def calculate_file_hash(file_path, hash_algorithm='sha256'):
     """
@@ -70,8 +116,39 @@ def compare_folders(from_folder, to_folder):
 
     return different_files
 
+def setup_backup_ui(widget, folder):
+    last_backup_time = widget.findChild(QLabel, "last_backup_time")
+    backup_size = widget.findChild(QLabel, "backup_size")
+    backup_num = widget.findChild(QLabel, "backup_num")
 
-def backup_folder():
+    if last_backup_time:
+        # 设置标签文本为上次备份时间
+        ts = get_last_backup_time(folder)
+        if ts:
+            dt = datetime.datetime.fromtimestamp(float(ts))
+            formatted_time = dt.strftime("%Y年%m月%d日 %H:%M:%S")
+            last_backup_time.setText(f"{formatted_time}")
+        else:
+            last_backup_time.setText("无")
+    else:
+        log("未找到 last_backup_time 控件")
+
+    if backup_size:
+        size_bytes = calc_folder_size(folder)
+        for unit in [' B', ' KB', ' MB', ' GB', ' TB']:
+            if size_bytes < 1024:
+                break
+            size_bytes /= 1024
+        backup_size.setText(f"{size_bytes:.2f} {unit}")
+    else:
+        log("未找到 backup_size 控件")
+
+    if backup_num:
+        backup_num.setText(f"{calc_folder_num(folder)} 次")
+    else:
+        log("未找到 backup_num 控件")
+
+def backup_folder(backup_interface):
     # Configure logging
     
     # 1. 读取配置文件(config.json) -> config
@@ -196,11 +273,12 @@ def backup_folder():
     with open(time_config_path, 'w') as f:
         json.dump(time_config, f, indent=2)
     log("备份过程完成")
+    setup_backup_ui(backup_interface, to_folder)
+    log("已更新备份界面信息")
 
 
 def normalize_path(path):
     """标准化路径格式，统一使用 '/' 分隔符"""
     return path.replace(os.sep, '/')
 
-
-backup_folder()
+# backup_folder()

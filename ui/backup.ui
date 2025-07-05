@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>688</width>
+    <height>590</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string>
+    @import url('https://cdn.jsdelivr.net/gh/zhiyiYo/PyQt-Fluent-Widgets@main/qfluentwidgets.qss');
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <widget class="TitleLabel" name="TitleLabel">
+     <property name="text">
+      <string>备份</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="SmoothScrollArea" name="SmoothScrollArea">
+     <property name="styleSheet">
+      <string notr="true">background: transparent; border: none</string>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>670</width>
+        <height>528</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QOpenGLWidget" name="openGLWidget"/>
+       </item>
+       <item>
+        <widget class="CardWidget" name="CardWidget_5">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>70</height>
+          </size>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="PushButton" name="backup_now_button">
+            <property name="text">
+             <string>立即备份</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="CaptionLabel" name="CaptionLabel_4">
+              <property name="text">
+               <string>上次备份时间:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CaptionLabel" name="last_backup_time">
+              <property name="text">
+               <string>2025年07月05日 20:03:22</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="CaptionLabel" name="CaptionLabel_7">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>备份占用空间:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CaptionLabel" name="backup_size">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>25 GB</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="CaptionLabel" name="CaptionLabel_10">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>已备份次数</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CaptionLabel" name="backup_num">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>57 次</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_5">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="SubtitleLabel" name="SubtitleLabel">
+         <property name="text">
+          <string>自动备份</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="CardWidget" name="CardWidget_4">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>70</height>
+          </size>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="StrongBodyLabel" name="label_2">
+              <property name="maximumSize">
+               <size>
+                <width>16777210</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>自动备份时间</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignJustify|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CaptionLabel" name="CaptionLabel_3">
+              <property name="text">
+               <string>经过设定时间后自动进行一次备份</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="SpinBox" name="auto_backup_time">
+            <property name="suffix">
+             <string> 秒</string>
+            </property>
+            <property name="prefix">
+             <string/>
+            </property>
+            <property name="maximum">
+             <number>43200</number>
+            </property>
+            <property name="value">
+             <number>60</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="CardWidget" name="CardWidget_6">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>70</height>
+          </size>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="StrongBodyLabel" name="label_3">
+              <property name="maximumSize">
+               <size>
+                <width>16777210</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>启动时备份</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignJustify|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CaptionLabel" name="CaptionLabel_11">
+              <property name="text">
+               <string>打开软件后自动开始一次备份</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="lightColor" stdset="0">
+               <color>
+                <red>127</red>
+                <green>127</green>
+                <blue>127</blue>
+               </color>
+              </property>
+              <property name="darkColor" stdset="0">
+               <color>
+                <red>185</red>
+                <green>185</green>
+                <blue>185</blue>
+               </color>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>377</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="SwitchButton" name="backup_at_run">
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>打开</string>
+            </property>
+            <property name="onText">
+             <string>打开</string>
+            </property>
+            <property name="offText">
+             <string>关闭</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PushButton</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SwitchButton</class>
+   <extends>QWidget</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CardWidget</class>
+   <extends>QFrame</extends>
+   <header>qfluentwidgets</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SmoothScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>qfluentwidgets</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CaptionLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>StrongBodyLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SubtitleLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>TitleLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
