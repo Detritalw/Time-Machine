@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QPushButton, QLabel, QComboBox
+from PyQt5.QtWidgets import QPushButton, QLabel, QComboBox, QFileDialog
 from qfluentwidgets import ComboBox, SmoothScrollArea, SpinBox, SwitchButton
 from modules.backup import backup_folder, calc_folder_size, calc_folder_num, get_last_backup_time, get_backup_times
 from modules.log import log
@@ -68,6 +68,8 @@ def setup_backup_ui(self, widget, folder):
     backup_num = widget.findChild(QLabel, "backup_num")
     auto_backup_time = widget.findChild(SpinBox, "auto_backup_time")
     backup_at_run = widget.findChild(SwitchButton, "backup_at_run")
+    from_folder_button = widget.findChild(QPushButton, "from_folder_button")
+    to_folder_button = widget.findChild(QPushButton, "to_folder_button")
     
     if backup_now_button:
         # 使用 lambda 传递参数
@@ -79,9 +81,12 @@ def setup_backup_ui(self, widget, folder):
         # 设置标签文本为上次备份时间
         ts = get_last_backup_time(folder)
         if ts:
-            dt = datetime.datetime.fromtimestamp(float(ts))
-            formatted_time = dt.strftime("%Y年%m月%d日 %H:%M:%S")
-            last_backup_time.setText(f"{formatted_time}")
+            if ts == '无备份记录':
+                last_backup_time.setText("无备份记录")
+            else:
+                dt = datetime.datetime.fromtimestamp(float(ts))
+                formatted_time = dt.strftime("%Y年%m月%d日 %H:%M:%S")
+                last_backup_time.setText(f"{formatted_time}")
         else:
             last_backup_time.setText("无")
     else:
@@ -118,7 +123,17 @@ def setup_backup_ui(self, widget, folder):
         )
     else:
         log("未找到 backup_at_run 控件")
-        
+
+    if from_folder_button:
+        from_folder_button.clicked.connect(lambda: select_folder(widget, "from"))
+    else:
+        log("未找到 from_folder_button 控件")
+
+    if to_folder_button:
+        to_folder_button.clicked.connect(lambda: select_folder(widget, "to"))
+    else:
+        log("未找到 to_folder_button 控件")
+
 def setup_restore_files_ui(self, widget, folder):
     restore_files = widget.findChild(SmoothScrollArea, "files")
 
@@ -160,3 +175,43 @@ def get_backup_at_run_from_config():
         return config.get("backup_at_run", False)
     except Exception:
         return False
+
+def select_folder(widget, folder_type):
+    """
+    打开文件夹选择对话框，选择的文件夹路径存储到配置文件中的 [backup-folder][folder_type]
+    """
+    folder_path = QFileDialog.getExistingDirectory(None, "选择文件夹", os.getcwd())
+    if folder_path:
+        config_path = os.path.join("config.json")
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            config = {}
+        
+        # 确保 backup-folder 存在
+        if "backup-folder" not in config:
+            config["backup-folder"] = {}
+        
+        # 更新对应的文件夹路径
+        config["backup-folder"][folder_type] = folder_path
+        
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(config, f, ensure_ascii=False, indent=4)
+            log(f"已更新配置: backup-folder.{folder_type}={folder_path}")
+            # 更新界面显示
+            if folder_type == "from":
+                from_folder_label = widget.findChild(QLabel, "from_folder_label")
+                if from_folder_label:
+                    from_folder_label.setText(folder_path)
+                else:
+                    log("未找到 from_folder_label 控件")
+            elif folder_type == "to":
+                to_folder_label = widget.findChild(QLabel, "to_folder_label")
+                if to_folder_label:
+                    to_folder_label.setText(folder_path)
+                else:
+                    log("未找到 to_folder_label 控件")
+        except Exception as e:
+            log(f"写入配置文件失败: {e}")

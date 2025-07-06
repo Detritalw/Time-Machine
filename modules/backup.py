@@ -26,6 +26,8 @@ def calc_folder_num(folder_path):
     计算文件夹中的文件夹数量 (不包括文件，也不包括子文件夹和子文件)
     '''
     count = 0
+    if not os.path.exists(folder_path):
+        return 0
     for entry in os.listdir(folder_path):
         full_path = os.path.join(folder_path, entry)
         if os.path.isdir(full_path):
@@ -113,7 +115,6 @@ def compare_folders(from_folder, to_folder):
     """
     different_files = []
 
-
     # 获取源文件夹所有文件及其哈希值
     from_files = {}
     for root, _, files in os.walk(from_folder):
@@ -121,10 +122,13 @@ def compare_folders(from_folder, to_folder):
             abs_path = os.path.join(root, file)
             rel_path = os.path.relpath(abs_path, from_folder).replace(os.sep, '/')
             file_hash = calculate_file_hash(abs_path)
-            from_files[rel_path] = file_hash
+            if file_hash is not None:
+                from_files[rel_path] = file_hash
+                log(f"源文件 {rel_path} 的哈希值: {file_hash}")
 
     # 如果目标文件夹不存在，则所有文件都需要备份
     if not os.path.exists(to_folder):
+        log("目标文件夹不存在，所有文件都需要备份")
         return list(from_files.keys())
 
     # 获取目标文件夹所有文件及其哈希值
@@ -134,13 +138,29 @@ def compare_folders(from_folder, to_folder):
             abs_path = os.path.join(root, file)
             rel_path = os.path.relpath(abs_path, to_folder).replace(os.sep, '/')
             file_hash = calculate_file_hash(abs_path)
-            to_files[rel_path] = file_hash
+            if file_hash is not None:
+                to_files[rel_path] = file_hash
+                log(f"目标文件 {rel_path} 的哈希值: {file_hash}")
 
     # 对比两个文件树
     for rel_path, hash_value in from_files.items():
-        if rel_path not in to_files or to_files[rel_path] != hash_value:
+        log(f"对比文件: {rel_path} (源哈希: {hash_value})")
+        target_hash = to_files.get(rel_path)
+        if rel_path not in to_files:
+            log(f"发现不同的文件: {rel_path} (原因: 在目标文件夹中不存在)")
             different_files.append(rel_path)
+        elif target_hash != hash_value:
+            log(f"发现不同的文件: {rel_path} (源哈希: {hash_value}, 目标哈希: {target_hash})")
+            different_files.append(rel_path)
+        else:
+            log(f"文件 {rel_path} 未发生变化 (哈希值相同)")
 
+    # 计算并记录未变化的文件数量
+    unchanged_count = len(from_files) - len(different_files)
+    log(f"未发生变化的文件数量: {unchanged_count}")
+    log(f"发现需要复制的文件数量: {len(different_files)}")
+    log(f"需要复制的文件: {different_files}")
+    
     return different_files
 
 def setup_backup_ui(widget, folder):
@@ -245,9 +265,17 @@ def backup_folder(backup_interface):
     # 8. 在 to_folder 中创建一个名为 当前时间时间戳 的文件夹
     current_time = str(int(time.time()))
     current_folder_path = os.path.join(to_folder, current_time)
-    os.makedirs(current_folder_path)
-    log(f"创建新的时间戳文件夹: {current_folder_path}")
-    
+    try:
+        os.makedirs(current_folder_path)
+        log(f"创建新的时间戳文件夹: {current_folder_path}")
+    except FileExistsError:
+        log(f"时间戳文件夹已存在: {current_folder_path}")
+        # 如果文件夹已存在，可以尝试使用稍后的时间戳
+        current_time = str(int(time.time()) + 1)
+        current_folder_path = os.path.join(to_folder, current_time)
+        os.makedirs(current_folder_path)
+        log(f"使用新时间戳创建文件夹: {current_folder_path}")
+
     # 9. 读取 from_folder 中 different_file_list 中的文件复制到 to_folder/当前时间时间戳/ 文件夹中
     log(f"将文件复制到 {current_folder_path}")
     for file_rel in different_file_list:
@@ -294,6 +322,32 @@ def backup_folder(backup_interface):
 
     time_config['now'] = now_files
     log(f"已记录源文件夹结构，共 {len(now_files)} 个文件")
+
+    # 13. 向 time_config['times'][current_time] 添加 'times' 字段
+    log("开始向 time_config['times'][current_time] 添加 'times' 字段")
+    file_times = {}
+    
+    # 确保 config 中有 'times' 键
+    if 'times' not in config:
+        config['times'] = {}
+        log("配置中缺少 'times' 键，已初始化为空字典")
+
+    for rel_path in from_folder_tree:
+        normalized_path = normalize_path(rel_path)
+        if normalized_path in different_file_list:
+            # 如果是本次复制的文件，使用当前时间戳
+            file_times[normalized_path] = current_time
+        else:
+            # 否则查找该文件上一次备份的时间戳
+            last_time = None
+            for ts in sorted((int(key) for key in config["times"] if key.isdigit()), reverse=True):
+                if normalized_path in config["times"][str(ts)]["files"]:
+                    last_time = str(ts)
+                    break
+            file_times[normalized_path] = last_time if last_time is not None else "unknown"
+
+    time_config['times'][current_time]['times'] = file_times
+    log(f"已添加 'times' 字段: {file_times}")
 
     # 写回 config.json
     log(f"将更新后的配置写回 {time_config_path}")
