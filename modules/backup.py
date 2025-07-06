@@ -104,57 +104,55 @@ def calculate_file_hash(file_path, hash_algorithm='sha256'):
 
 def compare_folders(from_folder, to_folder):
     """
-    比较源文件夹和指定的目标文件夹，返回新增或修改过的文件列表
-
+    比较源文件夹和目标文件夹，返回新增或修改过的文件列表
+    
     参数:
         from_folder (str): 源文件夹路径
         to_folder (str): 目标文件夹路径（通常为上次备份的最新时间戳文件夹）
-
+    
     返回:
         list: 新增或修改的文件路径列表（相对于源文件夹）
     """
     different_files = []
-
+    
     # 获取源文件夹所有文件及其哈希值
     from_files = {}
     for root, _, files in os.walk(from_folder):
         for file in files:
             abs_path = os.path.join(root, file)
-            rel_path = os.path.relpath(abs_path, from_folder).replace(os.sep, '/')
+            rel_path = normalize_path(os.path.relpath(abs_path, from_folder))
             file_hash = calculate_file_hash(abs_path)
             if file_hash is not None:
                 from_files[rel_path] = file_hash
                 log(f"源文件 {rel_path} 的哈希值: {file_hash}")
-
-    # 如果目标文件夹不存在，则所有文件都需要备份
-    if not os.path.exists(to_folder):
-        log("目标文件夹不存在，所有文件都需要备份")
-        return list(from_files.keys())
-
-    # 获取目标文件夹所有文件及其哈希值
-    to_files = {}
-    for root, _, files in os.walk(to_folder):
-        for file in files:
-            abs_path = os.path.join(root, file)
-            rel_path = os.path.relpath(abs_path, to_folder).replace(os.sep, '/')
-            file_hash = calculate_file_hash(abs_path)
-            if file_hash is not None:
-                to_files[rel_path] = file_hash
-                log(f"目标文件 {rel_path} 的哈希值: {file_hash}")
-
-    # 对比两个文件树
+    
+    # 获取目标文件夹的 now 字段内容
+    if os.path.exists(os.path.join(to_folder, 'config.json')):
+        with open(os.path.join(to_folder, 'config.json'), 'r') as f:
+            try:
+                target_config = json.load(f)
+                now_files = target_config.get('now', {})
+                log(f"使用目标文件夹配置的now字段进行比对")
+            except json.JSONDecodeError:
+                now_files = {}
+                log(f"目标文件夹配置文件读取失败，所有文件都将被备份")
+    else:
+        now_files = {}
+        log(f"目标文件夹配置文件不存在，所有文件都将被备份")
+    
+    # 对比源文件夹和目标文件夹的 now 字段
     for rel_path, hash_value in from_files.items():
         log(f"对比文件: {rel_path} (源哈希: {hash_value})")
-        target_hash = to_files.get(rel_path)
-        if rel_path not in to_files:
-            log(f"发现不同的文件: {rel_path} (原因: 在目标文件夹中不存在)")
+        target_hash = now_files.get(rel_path)
+        if rel_path not in now_files:
+            log(f"发现不同的文件: {rel_path} (原因: 在目标文件夹配置中不存在)")
             different_files.append(rel_path)
         elif target_hash != hash_value:
             log(f"发现不同的文件: {rel_path} (源哈希: {hash_value}, 目标哈希: {target_hash})")
             different_files.append(rel_path)
         else:
             log(f"文件 {rel_path} 未发生变化 (哈希值相同)")
-
+    
     # 计算并记录未变化的文件数量
     unchanged_count = len(from_files) - len(different_files)
     log(f"未发生变化的文件数量: {unchanged_count}")
@@ -251,7 +249,8 @@ def backup_folder(backup_interface):
             latest_dir = max(dirs, key=lambda x: int(x))
             latest_folder_path = os.path.join(to_folder, latest_dir)
             log(f"最新时间戳文件夹路径: {latest_folder_path}")
-            different_file_list = compare_folders(from_folder, latest_folder_path)
+            # 使用 config['now'] 进行比对
+            different_file_list = compare_folders(from_folder, to_folder)
         else:
             log("目标文件夹中未找到时间戳文件夹，所有文件都需要备份")
             different_file_list = list(from_folder_tree)  # 如果没有时间戳文件夹，则所有文件都需要备份
@@ -340,9 +339,12 @@ def backup_folder(backup_interface):
         else:
             # 否则查找该文件上一次备份的时间戳
             last_time = None
+            # 从最新的时间戳开始查找
             for ts in sorted((int(key) for key in config["times"] if key.isdigit()), reverse=True):
-                if normalized_path in config["times"][str(ts)]["files"]:
-                    last_time = str(ts)
+                ts_str = str(ts)
+                # 检查该时间戳下的 'times' 字段是否存在且包含当前文件
+                if ts_str in config["times"] and normalized_path in config["times"][ts_str].get("times", {}):
+                    last_time = config["times"][ts_str]["times"][normalized_path]
                     break
             file_times[normalized_path] = last_time if last_time is not None else "unknown"
 
