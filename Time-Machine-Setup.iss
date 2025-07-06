@@ -40,7 +40,7 @@ PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=.\output
 OutputBaseFilename=Time Machine Setup
-SetupIconFile=output\bloret.ico
+SetupIconFile=output\Time-Machine.ico
 SolidCompression=yes
 WizardStyle=modern
 
