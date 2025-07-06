@@ -84,7 +84,6 @@ jobs:
         cp -r ui/ ${{ env.OUTPUT_DIR }}/
         cp -r config.json ${{ env.OUTPUT_DIR }}/
         cp -r LICENSE ${{ env.OUTPUT_DIR }}/
-        cp -r servers.dat ${{ env.OUTPUT_DIR }}/
         cp -r Time-Machine.ico ${{ env.OUTPUT_DIR }}/
 
     - name: 清理旧压缩包
