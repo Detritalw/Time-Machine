@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QSystemTrayIcon, QApplication, QWidget
-from PyQt5.QtCore import QFile
+from PyQt5.QtWidgets import QSystemTrayIcon, QApplication, QWidget, QLabel
+from PyQt5.QtCore import QFile, QTimer
 from PyQt5.uic import loadUi
-from qfluentwidgets import FluentWindow, SystemTrayMenu, Action, setThemeColor, FluentIcon
+from PyQt5.QtGui import QIcon, QColor, QPalette
+from qfluentwidgets import FluentWindow, SystemTrayMenu, Action, setThemeColor, FluentIcon, CaptionLabel
 import sys, logging, os, json
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
@@ -10,7 +11,7 @@ import sys, logging, os, json
 from modules.log import log
 from modules.systems import get_system_theme_color,is_dark_theme,restart
 from modules.backup import backup_folder
-from modules.setupui import setup_backup_ui, setup_restore_ui
+from modules.setupui import setup_backup_ui, setup_restore_ui, update_countdown
 class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
@@ -26,10 +27,14 @@ class MainWindow(FluentWindow):
 
         # 定义并获取isdarktheme变量
         self.isdarktheme = is_dark_theme()
-        
+        log(f"当前主题是否为暗色: {self.isdarktheme}")
         if(self.isdarktheme):
             from qfluentwidgets import setTheme, Theme
             setTheme(Theme.AUTO)
+        else:
+            # 监听系统主题变化
+            QApplication.instance().paletteChanged.connect(self.apply_theme)
+            self.apply_theme()
             
         self.setWindowTitle("Time Machine")
         icon_path = os.path.join(os.getcwd(), 'Time-Machine.ico')
@@ -63,8 +68,90 @@ class MainWindow(FluentWindow):
         setup_backup_ui(self, self.backupInterface, self.config['backup-folder']['to'])
         setup_restore_ui(self, self.restoreInterface, self.config['backup-folder']['to'])
         
+        if self.config.get('backup_at_run'):
+            log("检测到开启自动备份设置，正在执行备份...")
+            # 执行备份操作
+            backup_folder(self.backupInterface)
+
+        if self.config.get('auto_backup_time'):
+            log(f"检测到自动备份时间设置为: {self.config['auto_backup_time']} 秒")
+            self.backup_delay = self.config.get("auto_backup_time", 5) * 1000  # 转换为毫秒
+            self.remaining_time = self.backup_delay  # 初始化剩余时间
+
+            self.backup_timer = QTimer(self)
+            self.backup_timer.timeout.connect(lambda: backup_folder(self.backupInterface))
+            self.backup_timer.start(self.backup_delay)
+
+            # 启动倒计时更新
+            self.backup_delay = self.config.get("auto_backup_time", 5) * 1000  # 转换为毫秒
+            self.remaining_time = self.backup_delay  # 初始化剩余时间
+
+            self.backup_timer = QTimer(self)
+            self.backup_timer.timeout.connect(lambda: backup_folder(self.backupInterface))
+            self.backup_timer.start(self.backup_delay)
+
+            # 启动倒计时更新
+            self.countdown_timer = QTimer(self)
+            self.countdown_timer.timeout.connect(self.update_countdown_slot)
+            self.countdown_timer.start(1000)  # 毎秒更新一次倒計時
+            self.update_countdown_slot()  # 立即更新一次初始時間
+
         # 初始化其他功能
         # self.initOtherFunctions()
+    def apply_theme(self, palette=None):
+        if palette is None:
+            palette = QApplication.palette()
+
+        # 检测系统主题
+        if palette.color(QPalette.Window).lightness() < 128:
+            theme = "dark"
+        else:
+            theme = "light"
+
+        if theme == "dark":
+            self.setStyleSheet("""
+                QWidget { background-color: #2e2e2e; color: #ffffff; }
+                QPushButton { background-color: #3a3a3a; border: 1px solid #444444; color: #ffffff; }
+                QPushButton:hover { background-color: #4a4a4a; color: #ffffff; }
+                QPushButton:pressed { background-color: #5a5a5a; color: #ffffff; }
+                QComboBox { background-color: #3a3a3a; border: 1px solid #444444; color: #ffffff; }
+                QComboBox:hover { background-color: #4a4a4a; color: #ffffff; }
+                QComboBox:pressed { background-color: #5a5a5a; color: #ffffff; }
+                QComboBox QAbstractItemView { background-color: #2e2e2e; selection-background-color: #4a4a4a; color: #ffffff; }
+                QLineEdit { background-color: #3a3a3a; border: 1px solid #444444; color: #ffffff; }
+                QLabel { color: #ffffff; }
+                QCheckBox { color: #ffffff; }
+                QCheckBox::indicator { width: 20px; height: 20px; }
+                QCheckBox::indicator:checked { image: url(ui/icon/checked.png); }
+                QCheckBox::indicator:unchecked { image: url(ui/icon/unchecked.png); }
+                """)
+            palette.setColor(QPalette.Window, QColor("#2e2e2e"))
+            palette.setColor(QPalette.WindowText, QColor("#ffffff"))
+            palette.setColor(QPalette.Base, QColor("#1e1e1e"))
+            palette.setColor(QPalette.AlternateBase, QColor("#2e2e2e"))
+            palette.setColor(QPalette.ToolTipBase, QColor("#ffffff"))
+            palette.setColor(QPalette.ToolTipText, QColor("#ffffff"))
+            palette.setColor(QPalette.Text, QColor("#ffffff"))
+            palette.setColor(QPalette.Button, QColor("#3a3a3a"))
+            palette.setColor(QPalette.ButtonText, QColor("#ffffff"))
+            palette.setColor(QPalette.BrightText, QColor("#ff0000"))
+            palette.setColor(QPalette.Link, QColor("#2a82da"))
+            palette.setColor(QPalette.Highlight, QColor("#2a82da"))
+            palette.setColor(QPalette.HighlightedText, QColor("#000000"))
+            self.setPalette(palette)
+        else:
+            self.setStyleSheet("")
+            self.setPalette(self.style().standardPalette())
+
+    def update_countdown_slot(self):
+        """槽函数，用于更新倒计时并刷新界面"""
+        if self.remaining_time > 0:
+            self.remaining_time -= 1000  # 减少一秒（单位为毫秒）
+        else:
+            self.remaining_time = self.backup_delay  # 重置倒计时
+
+        from modules.setupui import update_countdown
+        update_countdown(self.backupInterface, self.remaining_time)
 
     def load_ui(self, ui_path):
         """加载.ui文件"""

@@ -328,7 +328,7 @@
             <item>
              <widget class="CaptionLabel" name="CaptionLabel_3">
               <property name="text">
-               <string>经过设定时间后自动进行一次备份</string>
+               <string>经过设定时间后自动进行一次备份，重启软件后生效</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -365,20 +365,84 @@
            </spacer>
           </item>
           <item>
-           <widget class="SpinBox" name="auto_backup_time">
-            <property name="suffix">
-             <string> 秒</string>
-            </property>
-            <property name="prefix">
-             <string/>
-            </property>
-            <property name="maximum">
-             <number>43200</number>
-            </property>
-            <property name="value">
-             <number>60</number>
-            </property>
-           </widget>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <item>
+             <widget class="SpinBox" name="auto_backup_time">
+              <property name="suffix">
+               <string> 秒</string>
+              </property>
+              <property name="prefix">
+               <string/>
+              </property>
+              <property name="maximum">
+               <number>43200</number>
+              </property>
+              <property name="value">
+               <number>60</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <spacer name="horizontalSpacer_7">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="CaptionLabel" name="backup_time_wait">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>下次备份 120 秒后</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="lightColor" stdset="0">
+                 <color>
+                  <red>127</red>
+                  <green>127</green>
+                  <blue>127</blue>
+                 </color>
+                </property>
+                <property name="darkColor" stdset="0">
+                 <color>
+                  <red>185</red>
+                  <green>185</green>
+                  <blue>185</blue>
+                 </color>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_6">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
