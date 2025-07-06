@@ -42,7 +42,7 @@ jobs:
     - name: 检出最新版本
       uses: actions/checkout@v2
       with:
-        ref: 'Windows'
+        ref: 'main'
 
     - name: 验证资源文件路径
       run: |
@@ -111,7 +111,7 @@ jobs:
     - name: 检出最新版本
       uses: actions/checkout@v2
       with:
-        ref: 'Windows'
+        ref: 'main'
 
     - name: 创建输出目录并清理
       run: |
@@ -152,7 +152,7 @@ jobs:
     - name: 检出最新版本
       uses: actions/checkout@v2
       with:
-        ref: 'Windows'
+        ref: 'main'
 
     - name: 下载构建产物
       uses: actions/download-artifact@v4
@@ -211,7 +211,7 @@ jobs:
     - name: 检出最新版本
       uses: actions/checkout@v2
       with:
-        ref: 'Windows'
+        ref: 'main'
     - name: 验证资源文件路径
       run: |
         ls -alh .
@@ -277,7 +277,7 @@ jobs:
     - name: 检出最新版本
       uses: actions/checkout@v2
       with:
-        ref: 'Windows'
+        ref: 'main'
     - name: 验证资源文件路径
       run: |
         ls -alh .
