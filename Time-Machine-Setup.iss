@@ -1,6 +1,6 @@
 ; MyAppVersion 的值会由 Github Actions 自动修改
 #define MyAppName "Time Machine"
-#define MyAppVersion "0.1"
+#define MyAppVersion "0.1-Beta"
 #define MyAppPublisher "Bloret"
 #define MyAppURL "http://pcfs.top:2"
 #define MyAppExeName "Time-Machine.exe"

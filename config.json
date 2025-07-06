@@ -1,8 +1,8 @@
 {
     "ver": "0.1",
     "backup-folder": {
-        "from": "F:\\backuptest",
-        "to": "F:\\backup"
+        "from": "",
+        "to": ""
     },
     "backup_at_run": true,
     "auto_backup_time": 60
