@@ -430,8 +430,11 @@ def backup_folder(backup_interface):
                 # 处理目录
                 child_tree = build_file_tree(rel_path, key)
                 file_hash = calculate_file_hash(entry_path)
+                # 检查该目录是否在本次备份中被拷贝
+                dir_in_current = any(rel_path == f for f in different_file_list)
+                dir_time = current_time if dir_in_current else get_last_backup_time_for_dir(rel_path, history_config, current_time)
                 file_tree[entry] = {
-                    "time": current_time,
+                    "time": dir_time,
                     "type": "folder",
                     "hash": file_hash,
                     "child": child_tree
@@ -439,8 +442,11 @@ def backup_folder(backup_interface):
             elif os.path.isfile(entry_path):
                 # 处理文件
                 file_hash = calculate_file_hash(entry_path)
+                # 检查该文件是否在本次备份中被拷贝
+                file_in_current = rel_path in different_file_list
+                file_time = current_time if file_in_current else get_last_backup_time_for_file(rel_path, history_config, current_time)
                 file_tree[entry] = {
-                    "time": current_time,
+                    "time": file_time,
                     "type": "file",
                     "hash": file_hash,
                     "child": []
@@ -550,5 +556,43 @@ def del_backup_files(file, time):
 
     log("恢复过程完成")
     return True
+
+def get_last_backup_time_for_file(file_path, history_config, current_time):
+    """
+    获取文件最后一次备份的时间戳
+    
+    参数:
+        file_path (str): 文件路径（相对于源文件夹）
+        history_config (dict): 历史备份配置
+        current_time (str): 当前时间戳
+    
+    返回:
+        str: 最后一次备份的时间戳，如果没有找到则返回当前时间戳
+    """
+    # 从历史备份记录中查找
+    if 'times' in history_config:
+        for timestamp in sorted(history_config['times'].keys(), key=lambda x: int(x), reverse=True):
+            if file_path in history_config['times'][timestamp].get('times', {}):
+                return timestamp
+    return current_time
+
+def get_last_backup_time_for_dir(dir_path, history_config, current_time):
+    """
+    获取目录最后一次备份的时间戳
+    
+    参数:
+        dir_path (str): 目录路径（相对于源文件夹）
+        history_config (dict): 历史备份配置
+        current_time (str): 当前时间戳
+    
+    返回:
+        str: 最后一次备份的时间戳，如果没有找到则返回当前时间戳
+    """
+    # 从历史备份记录中查找
+    if 'times' in history_config:
+        for timestamp in sorted(history_config['times'].keys(), key=lambda x: int(x), reverse=True):
+            if dir_path in history_config['times'][timestamp].get('times', {}):
+                return timestamp
+    return current_time
 
 # backup_folder()
