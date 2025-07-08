@@ -1,6 +1,7 @@
 import json,os,shutil,time,hashlib,datetime
 from modules.log import log
 from PyQt5.QtWidgets import QPushButton, QLabel
+import threading
 
 
 def calc_folder_size(folder_path):
@@ -105,16 +106,34 @@ def calculate_file_hash(file_path, hash_algorithm='sha256'):
 def compare_folders(from_folder, to_folder):
     """
     比较源文件夹和目标文件夹，返回新增或修改过的文件列表
-    
+
     参数:
         from_folder (str): 源文件夹路径
         to_folder (str): 目标文件夹路径（通常为上次备份的最新时间戳文件夹）
-    
+
     返回:
         list: 新增或修改的文件路径列表（相对于源文件夹）
     """
     different_files = []
-    
+
+    # 检查源文件夹或目标文件夹是否存在
+    if not os.path.exists(from_folder) or not os.path.exists(to_folder):
+        if not os.path.exists(from_folder):
+            log(f"源文件夹不存在: {from_folder}")
+        if not os.path.exists(to_folder):
+            log(f"目标文件夹不存在: {to_folder}")
+        log("任一文件夹不存在，所有文件都将被备份")
+        from_files = {}
+        for root, _, files in os.walk(from_folder):
+            for file in files:
+                abs_path = os.path.join(root, file)
+                rel_path = normalize_path(os.path.relpath(abs_path, from_folder))
+                file_hash = calculate_file_hash(abs_path)
+                if file_hash is not None:
+                    from_files[rel_path] = file_hash
+                    log(f"源文件 {rel_path} 的哈希值: {file_hash}")
+        return list(from_files.keys())
+
     # 获取源文件夹所有文件及其哈希值
     from_files = {}
     for root, _, files in os.walk(from_folder):
@@ -193,9 +212,16 @@ def setup_backup_ui(widget, folder):
     else:
         log("未找到 backup_num 控件")
 
+def start_backup_thread(backup_interface):
+    """启动一个独立线程来执行备份过程"""
+    thread = threading.Thread(target=backup_folder, args=(backup_interface,))
+    thread.start()
+    log("备份线程已启动")
+
+
 def backup_folder(backup_interface):
     # Configure logging
-    
+
     # 1. 读取配置文件(config.json) -> config
     log("正在读取配置文件: config.json")
     with open('config.json', 'r') as f:
@@ -269,11 +295,13 @@ def backup_folder(backup_interface):
         log(f"创建新的时间戳文件夹: {current_folder_path}")
     except FileExistsError:
         log(f"时间戳文件夹已存在: {current_folder_path}")
-        # 如果文件夹已存在，可以尝试使用稍后的时间戳
-        current_time = str(int(time.time()) + 1)
-        current_folder_path = os.path.join(to_folder, current_time)
-        os.makedirs(current_folder_path)
-        log(f"使用新时间戳创建文件夹: {current_folder_path}")
+        # 如果文件夹已存在，直接结束备份进程并日志记录。
+        # current_time = str(int(time.time()) + 1)
+        # current_folder_path = os.path.join(to_folder, current_time)
+        # os.makedirs(current_folder_path)
+        # log(f"使用新时间戳创建文件夹: {current_folder_path}")
+        log(f"备份已存在，跳过此次备份")
+        return
 
     # 9. 读取 from_folder 中 different_file_list 中的文件复制到 to_folder/当前时间时间戳/ 文件夹中
     log(f"将文件复制到 {current_folder_path}")
@@ -286,10 +314,10 @@ def backup_folder(backup_interface):
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(src_path, dst_path)
             log(f"已复制文件: {file_rel}")
-        elif os.path.isdir(os.path.dirname(src_path)):
-            # 若是新目录结构，但未被创建，则创建对应目录
+        elif os.path.isdir(src_path):
+            # 创建对应的空目录
             os.makedirs(dst_path, exist_ok=True)
-            log(f"为以下文件创建了目录结构: {file_rel}")
+            log(f"创建了空目录: {file_rel}")
     
     # 10. 读取 to_folder/config.json -> time_config
     time_config_path = os.path.join(to_folder, 'config.json')
@@ -359,9 +387,22 @@ def backup_folder(backup_interface):
     setup_backup_ui(backup_interface, to_folder)
     log("已更新备份界面信息")
 
+    # 启动备份线程
+    start_backup_thread(backup_interface)
+
 
 def normalize_path(path):
     """标准化路径格式，统一使用 '/' 分隔符"""
     return path.replace(os.sep, '/')
+
+
+def backup_folder_thread(backup_interface):
+    """
+    在独立线程中运行备份任务。
+    """
+    try:
+        backup_folder(backup_interface)
+    except Exception as e:
+        log(f"备份线程发生错误: {e}")
 
 # backup_folder()

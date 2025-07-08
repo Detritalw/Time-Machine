@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QPushButton, QLabel, QComboBox, QFileDialog
-from qfluentwidgets import ComboBox, SmoothScrollArea, SpinBox, SwitchButton
+from PyQt5.QtWidgets import QPushButton, QLabel, QComboBox, QFileDialog, QVBoxLayout, QHBoxLayout, QWidget
+from qfluentwidgets import ComboBox, SmoothScrollArea, SpinBox, SwitchButton, CardWidget, StrongBodyLabel, CaptionLabel
 from modules.backup import backup_folder, calc_folder_size, calc_folder_num, get_last_backup_time, get_backup_times
 from modules.log import log
 import datetime
@@ -134,7 +134,7 @@ def setup_backup_ui(self, widget, folder):
     else:
         log("未找到 to_folder_button 控件")
 
-def setup_restore_files_ui(self, widget, folder):
+def setup_restore_files_ui(self, widget, folder, selected_ts=None):
     restore_files = widget.findChild(SmoothScrollArea, "files")
 
     if restore_files:
@@ -144,10 +144,65 @@ def setup_restore_files_ui(self, widget, folder):
                 config = json.load(f)
             now_value = config.get("now")
             log(f"config.json now: {now_value}")
+            if selected_ts is not None:
+                log(f"当前选中备份时间戳: {selected_ts}")
+                # do thing selected_ts
+                try:
+                    times_data = config.get("times", {})
+                    selected_time_data = times_data.get(str(selected_ts), {})
+                    files_data = selected_time_data.get("times", {})
+                    
+                    # 创建一个 QWidget 作为滚动区域的内容容器
+                    scroll_content = QWidget()
+                    layout = QVBoxLayout(scroll_content)
+                    
+                    for filename, ts in files_data.items():
+                        # 创建 CardWidget
+                        card = CardWidget()
+                        card_layout = QVBoxLayout()
+                        
+                        # 文件名标签
+                        file_label = StrongBodyLabel(filename)
+                        
+                        # 时间标签
+                        time_label = CaptionLabel(f"时间: {time_to_time(ts)}")
+                        
+                        # 将标签添加到 CardWidget 中
+                        card_layout.addWidget(file_label)
+                        card_layout.addWidget(time_label)
+                        
+                        # 设置 CardWidget 的布局
+                        card.setLayout(card_layout)
+                        
+                        # 将 CardWidget 添加到主布局
+                        layout.addWidget(card)
+                    
+                    # 设置滚动区域的内容
+                    restore_files.setWidget(scroll_content)
+                    # 设置滚动区域的布局方式（可选）
+                    restore_files.setWidgetResizable(True)
+                    
+                except Exception as e:
+                    log(f"处理选中时间戳数据时出错: {e}")
         except Exception as e:
             log(f"读取 config.json 失败: {e}")
     else:
         log("未找到 files 控件")
+
+
+def time_to_time(timestamp):
+    """
+    将时间戳转换为格式为 %Y年%m月%d日 %H:%M:%S 的字符串。
+
+    参数:
+        timestamp (str): 要转换的时间戳。
+
+    返回:
+        str: 格式化后的时间字符串。
+    """
+    dt = datetime.datetime.fromtimestamp(float(timestamp))
+    return dt.strftime("%Y年%m月%d日 %H:%M:%S")
+
 
 def setup_restore_ui(self, widget, folder):
     backup_time = widget.findChild(ComboBox, "backup_time")
@@ -157,11 +212,25 @@ def setup_restore_ui(self, widget, folder):
         formatted_times = []
         for ts in times:
             try:
-                dt = datetime.datetime.fromtimestamp(float(ts))
-                formatted_times.append(dt.strftime("%Y年%m月%d日 %H:%M:%S"))
+                formatted_times.append(time_to_time(ts))
             except Exception:
                 formatted_times.append(str(ts))
         backup_time.addItems(formatted_times)
+
+        # 绑定选择变化事件
+        def on_backup_time_changed(index):
+            if index < 0 or index >= len(times):
+                selected_ts = None
+            else:
+                selected_ts = times[index]
+            setup_restore_files_ui(self, widget, folder, selected_ts)
+        backup_time.currentIndexChanged.connect(on_backup_time_changed)
+
+        # 初始化时也调用一次
+        if times:
+            setup_restore_files_ui(self, widget, folder, times[0])
+        else:
+            setup_restore_files_ui(self, widget, folder, None)
     else:
         log("未找到 backup_time 控件")
 
