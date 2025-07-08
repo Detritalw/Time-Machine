@@ -1,9 +1,9 @@
 {
-    "ver": "0.1",
+    "ver": "1.1",
     "backup-folder": {
-        "from": "",
-        "to": ""
+        "from": "/blank",
+        "to": "/blank"
     },
-    "backup_at_run": true,
-    "auto_backup_time": 6000
+    "backup_at_run": false,
+    "auto_backup_time": 600
 }
