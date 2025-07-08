@@ -1,6 +1,4 @@
 import json,os,shutil,time,hashlib,datetime
-
-from httpx import delete
 from modules.log import log
 from PyQt5.QtWidgets import QPushButton, QLabel
 import threading
