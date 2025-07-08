@@ -74,7 +74,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap>imgs/Time-Machine.png</pixmap>
+            <pixmap>ui/imgs/Time-Machine.png</pixmap>
            </property>
            <property name="scaledContents">
             <bool>true</bool>
@@ -105,7 +105,7 @@
        <item>
         <widget class="CaptionLabel" name="CaptionLabel_3">
          <property name="text">
-          <string>Bloret Launcher 不只是 Minecraft 启动器，但也为 Minecraft 玩家提供便捷的游戏启动与管理体验。</string>
+          <string>简单地备份你的 Windows</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -167,7 +167,7 @@
              <enum>QFrame::Box</enum>
             </property>
             <property name="pixmap">
-             <pixmap>imgs/qq.png</pixmap>
+             <pixmap>ui/imgs/qq.png</pixmap>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
@@ -263,7 +263,7 @@
              </size>
             </property>
             <property name="pixmap">
-             <pixmap>imgs/github.png</pixmap>
+             <pixmap>ui/imgs/github.png</pixmap>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
