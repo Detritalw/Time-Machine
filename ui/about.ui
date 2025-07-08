@@ -38,7 +38,7 @@
         <x>0</x>
         <y>0</y>
         <width>688</width>
-        <height>507</height>
+        <height>506</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -74,7 +74,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap>Time-Machine.png</pixmap>
+            <pixmap>imgs/Time-Machine.png</pixmap>
            </property>
            <property name="scaledContents">
             <bool>true</bool>
@@ -167,7 +167,7 @@
              <enum>QFrame::Box</enum>
             </property>
             <property name="pixmap">
-             <pixmap>qq.png</pixmap>
+             <pixmap>imgs/qq.png</pixmap>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
@@ -263,7 +263,7 @@
              </size>
             </property>
             <property name="pixmap">
-             <pixmap>github.png</pixmap>
+             <pixmap>imgs/github.png</pixmap>
             </property>
             <property name="scaledContents">
              <bool>true</bool>
