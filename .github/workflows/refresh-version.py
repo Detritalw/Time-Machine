@@ -9,8 +9,8 @@ with open('config.json', 'r', encoding='utf-8') as config_file:
 
 # 修改 config.json 的指定字段
 config['backup-folder'] = {
-        "from": "",
-        "to": ""
+        "from": "/blank",
+        "to": "/blank"
     }
 
 # 保存修改后的 config.json
