@@ -1,8 +1,10 @@
 import json,os,shutil,time,hashlib,datetime
+
+from httpx import delete
 from modules.log import log
 from PyQt5.QtWidgets import QPushButton, QLabel
 import threading
-
+from send2trash import send2trash
 
 def calc_folder_size(folder_path):
     """
@@ -188,12 +190,17 @@ def setup_backup_ui(widget, folder):
     if last_backup_time:
         # 设置标签文本为上次备份时间
         ts = get_last_backup_time(folder)
-        if ts:
-            dt = datetime.datetime.fromtimestamp(float(ts))
-            formatted_time = dt.strftime("%Y年%m月%d日 %H:%M:%S")
-            last_backup_time.setText(f"{formatted_time}")
+        if ts == '无备份记录':
+            log(f"没有备份记录，显示: {ts}")
+            last_backup_time.setText(f"{ts}")
         else:
-            last_backup_time.setText("无")
+            try:
+                dt = datetime.datetime.fromtimestamp(float(ts))
+                formatted_time = dt.strftime("%Y年%m月%d日 %H:%M:%S")
+                last_backup_time.setText(f"{formatted_time}")
+            except ValueError:
+                log(f"无法转换时间戳: {ts}，显示原始值")
+                last_backup_time.setText(f"{ts}")
     else:
         log("未找到 last_backup_time 控件")
 
@@ -227,6 +234,11 @@ def backup_folder(backup_interface):
     with open('config.json', 'r') as f:
         config = json.load(f)
     log(f"配置内容: {json.dumps(config, indent=2)}")
+
+    # 确保 config 中有 'times' 键
+    if 'times' not in config:
+        config['times'] = {}
+        log("配置中缺少 'times' 键，已初始化为空字典")
     
     # 2. config[folder] -> folder
     log("从配置中获取文件夹设置")
@@ -263,9 +275,17 @@ def backup_folder(backup_interface):
     log(f"读取源文件夹中的文件: {from_folder}")
     from_folder_tree = []
     for root, dirs, files in os.walk(from_folder):
+        # 添加文件夹
+        for name in dirs:
+            dir_path = os.path.join(root, name)
+            rel_path = normalize_path(os.path.relpath(dir_path, from_folder))
+            from_folder_tree.append(rel_path)
+        # 添加文件
         for name in files:
-            from_folder_tree.append(os.path.relpath(os.path.join(root, name), from_folder))
-    log(f"源文件夹中的文件: {from_folder_tree}")
+            file_path = os.path.join(root, name)
+            rel_path = normalize_path(os.path.relpath(file_path, from_folder))
+            from_folder_tree.append(rel_path)
+    log(f"源文件夹中的文件和文件夹: {from_folder_tree}")
     
     # 7. 将 from_folder_tree 与 last_folder_tree 比对，将不同的文件列表 -> different_file_list
     log("比较源文件夹和最新时间戳文件夹之间的文件差异")
@@ -318,6 +338,9 @@ def backup_folder(backup_interface):
             # 创建对应的空目录
             os.makedirs(dst_path, exist_ok=True)
             log(f"创建了空目录: {file_rel}")
+            # 复制空目录的元数据
+            shutil.copystat(src_path, dst_path)
+            log(f"复制了空目录的元数据: {file_rel}")
     
     # 10. 读取 to_folder/config.json -> time_config
     time_config_path = os.path.join(to_folder, 'config.json')
@@ -327,13 +350,48 @@ def backup_folder(backup_interface):
             time_config = json.load(f)
         log(f"现有配置内容: {json.dumps(time_config, indent=2)}")
     else:
-        time_config = {"times": {}}
+        time_config = {}
         log("未找到现有配置文件，正在创建新配置")
-    
-    # 11. 在 time_config 中的 times 中添加一个条目
-    log(f"更新配置以记录新备份信息: {current_time}")
+
+    # 确保 time_config 中有 'times' 键
+    if 'times' not in time_config:
+        time_config['times'] = {}
+        log("配置中缺少 'times' 键，已初始化为空字典")
+
+    # 确保 time_config 中有 'times' 键
+    if 'times' not in time_config:
+        time_config['times'] = {}
+    log("已确保 'times' 键存在")
+
+    # 读取目标文件夹的 config.json 获取历史备份记录
+    time_config_path = os.path.join(to_folder, 'config.json')
+    if os.path.exists(time_config_path):
+        with open(time_config_path, 'r') as f:
+            history_config = json.load(f)
+        log(f"读取历史配置成功: {json.dumps(history_config, indent=2)}")
+    else:
+        history_config = {"times": {}}
+        log("未找到历史配置文件，使用空配置")
+
+    # 向 time_config['times'][current_time] 添加 'times' 字段
+    file_times = {}
+
+    for rel_path in from_folder_tree:
+        normalized_path = normalize_path(rel_path)
+        last_timestamp = None
+        # 逆序检查历史备份记录，查找文件最后一次备份的时间戳
+        for timestamp in sorted(history_config.get('times', {}).keys(), key=lambda x: int(x), reverse=True):
+            if normalized_path in history_config['times'][timestamp].get('files', []):
+                last_timestamp = timestamp
+                break
+        # 如果找不到历史记录，则使用当前时间戳
+        file_times[normalized_path] = last_timestamp if last_timestamp is not None else current_time
+    log(f"已添加 'times' 字段: {file_times}")
+
+    # 更新 time_config['times'][current_time]
     time_config['times'][current_time] = {
-        "files": different_file_list
+        "files": different_file_list,
+        "times": file_times
     }
 
     # 12. 将源文件夹结构写入 time_config 中的 now
@@ -359,25 +417,43 @@ def backup_folder(backup_interface):
         config['times'] = {}
         log("配置中缺少 'times' 键，已初始化为空字典")
 
-    for rel_path in from_folder_tree:
-        normalized_path = normalize_path(rel_path)
-        if normalized_path in different_file_list:
-            # 如果是本次复制的文件，使用当前时间戳
-            file_times[normalized_path] = current_time
-        else:
-            # 否则查找该文件上一次备份的时间戳
-            last_time = None
-            # 从最新的时间戳开始查找
-            for ts in sorted((int(key) for key in config["times"] if key.isdigit()), reverse=True):
-                ts_str = str(ts)
-                # 检查该时间戳下的 'times' 字段是否存在且包含当前文件
-                if ts_str in config["times"] and normalized_path in config["times"][ts_str].get("times", {}):
-                    last_time = config["times"][ts_str]["times"][normalized_path]
-                    break
-            file_times[normalized_path] = last_time if last_time is not None else "unknown"
+    # 构建文件树结构
+    def build_file_tree(path, parent_key=""):
+        file_tree = {}
+        full_path = os.path.join(from_folder, path) if parent_key else from_folder
+        for entry in os.listdir(full_path):
+            entry_path = os.path.join(full_path, entry)
+            rel_path = normalize_path(os.path.join(path, entry))
+            key = entry if not parent_key else f"{parent_key}/{entry}"
+            
+            if os.path.isdir(entry_path):
+                # 处理目录
+                child_tree = build_file_tree(rel_path, key)
+                file_hash = calculate_file_hash(entry_path)
+                file_tree[entry] = {
+                    "time": current_time,
+                    "type": "folder",
+                    "hash": file_hash,
+                    "child": child_tree
+                }
+            elif os.path.isfile(entry_path):
+                # 处理文件
+                file_hash = calculate_file_hash(entry_path)
+                file_tree[entry] = {
+                    "time": current_time,
+                    "type": "file",
+                    "hash": file_hash,
+                    "child": []
+                }
+        return file_tree
 
-    time_config['times'][current_time]['times'] = file_times
-    log(f"已添加 'times' 字段: {file_times}")
+    # 更新 time_config['times'][current_time]
+    file_tree = build_file_tree("")
+    time_config['times'][current_time] = {
+        "files": different_file_list,
+        "times": file_tree
+    }
+    log(f"已添加 'times' 字段: {file_tree}")
 
     # 写回 config.json
     log(f"将更新后的配置写回 {time_config_path}")
@@ -386,9 +462,6 @@ def backup_folder(backup_interface):
     log("备份过程完成")
     setup_backup_ui(backup_interface, to_folder)
     log("已更新备份界面信息")
-
-    # 启动备份线程
-    start_backup_thread(backup_interface)
 
 
 def normalize_path(path):
@@ -404,5 +477,78 @@ def backup_folder_thread(backup_interface):
         backup_folder(backup_interface)
     except Exception as e:
         log(f"备份线程发生错误: {e}")
+
+
+def backup_files(file, time):
+    """
+    从配置文件中读取备份设置，并将最新备份时间戳中的文件复制回源文件夹。
+    """
+    # 读取配置文件(config.json) -> config
+    log("正在读取配置文件: config.json")
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+    to_folder = config['backup-folder']['to']
+    from_folder = config['backup-folder']['from']
+
+    # 检查并复制文件
+    src_path = os.path.join(to_folder, time, file)
+    dst_path = os.path.join(from_folder)
+
+    if not os.path.exists(src_path):
+        log(f"文件不存在: {src_path}")
+        return False
+
+    if not os.path.exists(dst_path):
+        log(f"目标文件夹不存在: {dst_path}")
+        return False
+
+    shutil.copy2(src_path, dst_path)
+
+    log("恢复过程完成")
+    return True
+
+def del_backup_files(file, time):
+    '''
+    删除备份文件
+    '''
+    # 读取配置文件(config.json) -> config
+    log("正在读取配置文件: config.json")
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+
+    log("从配置中获取文件夹设置")
+    to_folder = config['backup-folder']['to']
+    log(f"目标文件夹: {to_folder}")
+
+    time_config_path = os.path.join(to_folder, 'config.json')
+
+    # 读取配置文件(to_folder/config.json) -> to_config
+    log("正在读取配置文件: config.json")
+    with open(time_config_path, 'r') as f:
+        to_config = json.load(f)
+
+    # 检查并删除 to_config['times'][time]
+    del to_config['times'][time]['files'][file]
+    log(f"已删除 to_config['times']['{time}']['files']['{file}']")
+    del to_config['times'][time]['times'][file]
+    log(f"已删除 to_config['times']['{time}']['times']['{file}']")
+
+    # 将更新后的 to_config 写回 config.json
+    log(f"将更新后的配置写回 {time_config_path}")
+    with open(time_config_path, 'w') as f:
+        json.dump(to_config, f, indent=2)
+
+    # 检查并复制文件
+    src_path = os.path.join(to_folder, time, file)
+
+    if not os.path.exists(src_path):
+        log(f"文件不存在: {src_path}")
+        return False
+
+    # 送到回收站
+    send2trash(src_path)
+
+    log("恢复过程完成")
+    return True
 
 # backup_folder()

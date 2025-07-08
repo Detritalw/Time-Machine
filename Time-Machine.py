@@ -1,17 +1,18 @@
-from PyQt5.QtWidgets import QSystemTrayIcon, QApplication, QWidget, QLabel
+from PyQt5.QtWidgets import QSystemTrayIcon, QApplication, QWidget
 from PyQt5.QtCore import QFile, QTimer
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QColor, QPalette
-from qfluentwidgets import FluentWindow, SystemTrayMenu, Action, setThemeColor, FluentIcon, CaptionLabel
+from qfluentwidgets import FluentWindow, SystemTrayMenu, Action, setThemeColor, FluentIcon, NavigationItemPosition
 import sys, logging, os, json
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 import sys, logging, os, json
 # 以下导入的部分位于 modules 文件夹中
 from modules.log import log
-from modules.systems import get_system_theme_color,is_dark_theme,restart
+from modules.systems import get_system_theme_color,is_dark_theme
 from modules.backup import backup_folder
-from modules.setupui import setup_backup_ui, setup_restore_ui, update_countdown
+from modules.setupui import setup_backup_ui, setup_restore_ui, setup_settings_ui, setup_about_ui
+
 class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
@@ -48,6 +49,7 @@ class MainWindow(FluentWindow):
         self.backupInterface = self.load_ui("ui/backup.ui")
         self.restoreInterface = self.load_ui("ui/restore.ui")
         self.settingsInterface = self.load_ui("ui/settings.ui")
+        self.aboutInterface = self.load_ui("ui/about.ui")
         
         # 添加导航项
         restore_interface = self.restoreInterface if self.restoreInterface else QWidget()
@@ -56,10 +58,13 @@ class MainWindow(FluentWindow):
         backup_interface.setObjectName("backupInterface")
         settings_interface = self.settingsInterface if self.settingsInterface else QWidget()
         settings_interface.setObjectName("settingsInterface")
+        about_interface = self.aboutInterface if self.aboutInterface else QWidget()
+        about_interface.setObjectName("aboutInterface")
         
-        self.addSubInterface(restore_interface, FluentIcon.HISTORY, '还原')
-        self.addSubInterface(backup_interface, FluentIcon.SYNC, '备份')
-        self.addSubInterface(settings_interface, FluentIcon.SETTING, '设置')
+        self.addSubInterface(restore_interface, FluentIcon.HISTORY, '还原',NavigationItemPosition.TOP)
+        self.addSubInterface(backup_interface, FluentIcon.SYNC, '备份',NavigationItemPosition.TOP)
+        self.addSubInterface(settings_interface, FluentIcon.SETTING, '设置',NavigationItemPosition.BOTTOM)
+        self.addSubInterface(about_interface, FluentIcon.INFO, '关于',NavigationItemPosition.BOTTOM)
         
         # 设置窗口样式
         self.setObjectName("mainWindow")
@@ -67,6 +72,8 @@ class MainWindow(FluentWindow):
 
         setup_backup_ui(self, self.backupInterface, self.config['backup-folder']['to'])
         setup_restore_ui(self, self.restoreInterface, self.config['backup-folder']['to'])
+        setup_settings_ui(self, self.settingsInterface)
+        setup_about_ui(self, self.aboutInterface)
         
         if self.config.get('backup_at_run'):
             log("检测到开启自动备份设置，正在执行备份...")
@@ -86,11 +93,7 @@ class MainWindow(FluentWindow):
             self.backup_delay = self.config.get("auto_backup_time", 5) * 1000  # 转换为毫秒
             self.remaining_time = self.backup_delay  # 初始化剩余时间
 
-            self.backup_timer = QTimer(self)
-            self.backup_timer.timeout.connect(lambda: backup_folder(self.backupInterface))
-            self.backup_timer.start(self.backup_delay)
-
-            # 启动倒计时更新
+            # 启动倒计时更新 (1s)
             self.countdown_timer = QTimer(self)
             self.countdown_timer.timeout.connect(self.update_countdown_slot)
             self.countdown_timer.start(1000)  # 毎秒更新一次倒計時
@@ -98,6 +101,7 @@ class MainWindow(FluentWindow):
 
         # 初始化其他功能
         # self.initOtherFunctions()
+    
     def apply_theme(self, palette=None):
         if palette is None:
             palette = QApplication.palette()
@@ -174,7 +178,21 @@ class MainWindow(FluentWindow):
             log(f"加载UI文件时发生异常: {e}", logging.ERROR)
             return None
     
-
+    def closeEvent(self, event):
+        """重写关闭事件以最小化到托盘而非退出"""
+        if self.tray_icon and self.tray_icon.isSystemTrayAvailable():
+            # 隐藏主窗口
+            self.hide()
+            # 显示托盘消息（可选）
+            # self.tray_icon.showMessage(
+            #     "Time Machine",
+            #     "程序已最小化至托盘",
+            #     QIcon("Time-Machine.ico"),  # 使用你的图标路径
+            #     2000
+            # )
+            event.ignore()  # 忽略默认的关闭事件
+        else:
+            event.accept()  # 如果没有可用的托盘，则正常关闭
 
 class SystemTrayIcon(QSystemTrayIcon):
     """系统托盘图标"""
@@ -214,7 +232,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.activated.connect(self.on_tray_icon_activated)
 
     def on_tray_icon_activated(self, reason):
-        """托盘图标激活事件"""
+        """# 托盘图标激活事件"""
         if reason == QSystemTrayIcon.Trigger:  # 单击托盘图标
             if self.parent.isMinimized() or not self.parent.isVisible():
                 self.parent.showNormal()
@@ -223,7 +241,7 @@ class SystemTrayIcon(QSystemTrayIcon):
                 self.parent.hide()
 
     def load_ui(self, ui_path):
-        """加载.ui文件"""
+        """# 加载.ui文件"""
         try:
             ui_file = QFile(ui_path)
             if not ui_file.open(QFile.ReadOnly):
@@ -263,5 +281,8 @@ if __name__ == '__main__':
         tray_icon.show()
     else:
         log("系统托盘不可用", logging.ERROR)
+    
+    # 将 tray_icon 保存为窗口的属性，以便 closeEvent 可以访问
+    window.tray_icon = tray_icon
     
     sys.exit(app.exec_())
