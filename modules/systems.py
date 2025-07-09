@@ -1,5 +1,6 @@
 from modules.win11toast import toast
 import ctypes.wintypes,ctypes,logging,os,subprocess
+import sys
 
 from modules.log import log, importlog
 from modules.safe import handle_exception
@@ -95,5 +96,34 @@ def restart():
     # os.execl(sys.executable, sys.executable, *sys.argv)
     subprocess.Popen(["restart.cmd"])
 
+def setup_startup_with_self_starting(value=True):
+    """
+    设置或取消开机自启任务，并附带 --self-starting 参数
+    """
+    task_name = "TimeMachineSelfStarting"
+    try:
+        if value:
+            script_path = os.path.abspath(sys.argv[0])  # 当前脚本路径
+            executable = sys.executable  # Python 解释器路径（如果是打包后的exe，则是它自己）
+            command = f'"{executable}" "{script_path}" --self-starting'
 
-importlog("SYSTEMS.PY")
+            cmd = [
+                "schtasks", "/create", "/tn", task_name,
+                "/tr", command, "/sc", "onlogon", "/rl", "highest", "/f"
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode == 0:
+                log(f"成功设置开机自启任务: {task_name}")
+            else:
+                log(f"设置开机自启失败: {result.stderr}", level=logging.ERROR)
+        else:
+            # 删除开机自启任务
+            cmd = ["schtasks", "/delete", "/tn", task_name, "/f"]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if result.returncode == 0:
+                log(f"成功删除开机自启任务: {task_name}")
+            else:
+                log(f"删除开机自启任务失败或任务不存在: {result.stderr}", level=logging.INFO)
+    except Exception as e:
+        log(f"处理开机自启任务时发生异常: {e}", level=logging.ERROR)
+        

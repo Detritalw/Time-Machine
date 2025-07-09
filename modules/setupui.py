@@ -1,8 +1,9 @@
+from re import S
 from PyQt5.QtWidgets import QPushButton, QLabel, QComboBox, QFileDialog, QVBoxLayout, QHBoxLayout, QWidget
 from qfluentwidgets import ComboBox, SmoothScrollArea, SpinBox, SwitchButton, CardWidget, StrongBodyLabel, CaptionLabel, RoundMenu, Action, FluentIcon, HyperlinkLabel, PushButton
-from modules import backup
 from modules.backup import backup_folder, calc_folder_size, calc_folder_num, get_last_backup_time, get_backup_times, backup_files, del_backup_files
 from modules.log import log
+from modules.systems import setup_startup_with_self_starting
 import datetime
 import os
 import json
@@ -42,6 +43,28 @@ def on_auto_backup_time_changed(value):
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
         log(f"已更新配置: auto_backup_time={value}")
+    except Exception as e:
+        log(f"写入配置文件失败: {e}")
+
+def on_self_starting_changed(value):
+    """
+    当 SwitchButton 状态变化时，更新配置文件中的 self-starting 字段
+    """
+    log(f"开机自启设置为: {value}")
+    config_path = os.path.join("config.json")
+    try:
+        # 读取现有配置
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        config = {}
+    config["self-starting"] = value
+    try:
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
+        log(f"已更新配置: self-starting={value}")
+        setup_startup_with_self_starting(value) # 更新开机自启设置
+        log(f"已更新开机自启设置: {value}")
     except Exception as e:
         log(f"写入配置文件失败: {e}")
 
@@ -364,6 +387,7 @@ def show_context_menu(pos, card, file, time):
 
 def setup_settings_ui(self, widget):
     TM_version = widget.findChild(StrongBodyLabel, "TM_version")
+    Self_starting = widget.findChild(SwitchButton, "Self_starting")
 
     # 读取配置文件(config.json) -> config
     log("正在读取配置文件: config.json")
@@ -375,6 +399,10 @@ def setup_settings_ui(self, widget):
         log(f"版本: {config['ver']}")
     else :
         log("未找到 TM_version 控件")
+
+    if Self_starting:
+        Self_starting.setChecked(config.get("self-starting", False))
+        Self_starting.checkedChanged.connect(lambda val: on_self_starting_changed(val))
 
 def setup_about_ui(self, widget):
     BSC_QQ = widget.findChild(PushButton, "BSC_QQ")

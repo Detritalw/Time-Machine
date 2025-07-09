@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt
 import sys, logging, os, json
 # 以下导入的部分位于 modules 文件夹中
 from modules.log import log
-from modules.systems import get_system_theme_color,is_dark_theme
+from modules.systems import get_system_theme_color,is_dark_theme, setup_startup_with_self_starting
 from modules.backup import backup_folder
 from modules.setupui import setup_backup_ui, setup_restore_ui, setup_settings_ui, setup_about_ui
 
@@ -74,6 +74,11 @@ class MainWindow(FluentWindow):
         setup_restore_ui(self, self.restoreInterface, self.config['backup-folder']['to'])
         setup_settings_ui(self, self.settingsInterface)
         setup_about_ui(self, self.aboutInterface)
+
+        # 检查是否需要设置开机自启
+        if self.config.get("self-starting", False):
+            setup_startup_with_self_starting(True)
+
         
         if self.config.get('backup_at_run'):
             log("检测到开启自动备份设置，正在执行备份...")
@@ -272,7 +277,12 @@ if __name__ == '__main__':
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.show()  # 确保主窗口先显示
+
+    # 如果启动参数包含 --self-starting，则不显示窗口
+    if '--self-starting' in sys.argv:
+        window.hide()  # 直接隐藏主窗口
+    else:
+        window.show()  # 否则正常显示主窗口
     
     # 初始化系统托盘图标
     tray_icon = SystemTrayIcon(window)
