@@ -403,6 +403,8 @@ def setup_settings_ui(self, widget):
     if Self_starting:
         Self_starting.setChecked(config.get("self-starting", False))
         Self_starting.checkedChanged.connect(lambda val: on_self_starting_changed(val))
+    else:
+        log("未找到 Self_starting 控件")
 
 def setup_about_ui(self, widget):
     BSC_QQ = widget.findChild(PushButton, "BSC_QQ")

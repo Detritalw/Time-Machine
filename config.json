@@ -6,5 +6,5 @@
     },
     "backup_at_run": false,
     "auto_backup_time": 600,
-    "self-starting": true
+    "self-starting": false
 }
