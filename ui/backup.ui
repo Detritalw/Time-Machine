@@ -46,7 +46,7 @@
         <x>0</x>
         <y>0</y>
         <width>838</width>
-        <height>723</height>
+        <height>722</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -64,7 +64,7 @@
             <x>0</x>
             <y>0</y>
             <width>820</width>
-            <height>699</height>
+            <height>698</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -634,7 +634,7 @@
                </widget>
               </item>
               <item>
-               <widget class="PushButton" name="to_folder_button">
+               <widget class="PushButton" name="from_folder_button">
                 <property name="text">
                  <string>选择文件夹</string>
                 </property>
@@ -717,7 +717,7 @@
                </widget>
               </item>
               <item>
-               <widget class="PushButton" name="from_folder_button">
+               <widget class="PushButton" name="to_folder_button">
                 <property name="text">
                  <string>选择文件夹</string>
                 </property>
