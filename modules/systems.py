@@ -1,13 +1,24 @@
-from modules.win11toast import toast
-import ctypes.wintypes,ctypes,logging,os,subprocess
-import sys
+import logging, os, subprocess, sys
 
 from modules.log import log
 from modules.safe import handle_exception
-from win32com.client import Dispatch
+
+try:
+    import ctypes.wintypes, ctypes
+    from win32com.client import Dispatch
+    from modules.win11toast import toast
+    _IS_WINDOWS = True
+except (ImportError, OSError, AttributeError):
+    _IS_WINDOWS = False
+    ctypes = None
+    Dispatch = lambda: None
+    def toast(*args, **kwargs):
+        log("通知仅在 Windows 上可用", logging.WARNING)
 
 def get_system_theme_color():
-    """获取系统主题颜色"""
+    """获取系统主题颜色（Windows only）"""
+    if not _IS_WINDOWS:
+        return "#0078D7"
     try:
         # 定义注册表路径和键名
         reg_path = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"
@@ -42,6 +53,8 @@ def get_system_theme_color():
         return "#0078D7"  # 默认蓝色
 
 def is_dark_theme():
+    if not _IS_WINDOWS:
+        return False
     try:
         # 定义注册表路径和键名
         reg_path = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"

@@ -1,0 +1,9 @@
+# Time Machine — RinUI 版依赖
+# 核心
+PySide6>=6.5
+RinUI>=0.3.0
+# Windows 专属（可选）
+pywin32; sys_platform == 'win32'
+win11toast; sys_platform == 'win32'
+send2trash>=1.8
+darkdetect>=0.8

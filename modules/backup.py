@@ -1,6 +1,5 @@
 import json,os,shutil,time,hashlib,datetime
 from modules.log import log
-from PyQt5.QtWidgets import QPushButton, QLabel
 import threading
 from send2trash import send2trash
 
@@ -180,57 +179,43 @@ def compare_folders(from_folder, to_folder):
     
     return different_files
 
-def setup_backup_ui(widget, folder):
-    last_backup_time = widget.findChild(QLabel, "last_backup_time")
-    backup_size = widget.findChild(QLabel, "backup_size")
-    backup_num = widget.findChild(QLabel, "backup_num")
-
-    if last_backup_time:
-        # 设置标签文本为上次备份时间
-        ts = get_last_backup_time(folder)
-        if ts == '无备份记录':
-            log(f"没有备份记录，显示: {ts}")
-            last_backup_time.setText(f"{ts}")
-        else:
-            try:
-                dt = datetime.datetime.fromtimestamp(float(ts))
-                formatted_time = dt.strftime("%Y年%m月%d日 %H:%M:%S")
-                last_backup_time.setText(f"{formatted_time}")
-            except ValueError:
-                log(f"无法转换时间戳: {ts}，显示原始值")
-                last_backup_time.setText(f"{ts}")
+def setup_backup_ui(folder: str) -> dict:
+    """计算备份统计信息并返回字典（不再依赖 PyQt5 控件）"""
+    ts = get_last_backup_time(folder)
+    if ts != '无备份记录':
+        try:
+            dt = datetime.datetime.fromtimestamp(float(ts))
+            formatted_time = dt.strftime("%Y年%m月%d日 %H:%M:%S")
+        except ValueError:
+            formatted_time = ts
     else:
-        log("未找到 last_backup_time 控件")
+        formatted_time = '无备份记录'
 
-    if backup_size:
-        size_bytes = calc_folder_size(folder)
-        for unit in [' B', ' KB', ' MB', ' GB', ' TB']:
-            if size_bytes < 1024:
-                break
-            size_bytes /= 1024
-        backup_size.setText(f"{size_bytes:.2f} {unit}")
-    else:
-        log("未找到 backup_size 控件")
+    size_bytes = calc_folder_size(folder)
+    for unit in [' B', ' KB', ' MB', ' GB', ' TB']:
+        if size_bytes < 1024:
+            break
+        size_bytes /= 1024
 
-    if backup_num:
-        backup_num.setText(f"{calc_folder_num(folder)} 次")
-    else:
-        log("未找到 backup_num 控件")
+    return {
+        'last_time': formatted_time,
+        'size': f"{size_bytes:.2f} {unit}",
+        'count': calc_folder_num(folder),
+    }
 
-def start_backup_thread(backup_interface):
+
+def start_backup_thread(config: dict):
     """启动一个独立线程来执行备份过程"""
-    thread = threading.Thread(target=backup_folder, args=(backup_interface,))
+    thread = threading.Thread(target=backup_folder, args=(config,))
     thread.start()
     log("备份线程已启动")
 
 
-def backup_folder(backup_interface):
-    # Configure logging
-
-    # 1. 读取配置文件(config.json) -> config
-    log("正在读取配置文件: config.json")
-    with open('config.json', 'r') as f:
-        config = json.load(f)
+def backup_folder(config: dict):
+    """
+    执行完整备份流程。
+    参数 config 直接传入配置字典，不再依赖 UI widget。
+    """
     log(f"配置内容: {json.dumps(config, indent=2)}")
 
     # 确保 config 中有 'times' 键
@@ -464,8 +449,12 @@ def backup_folder(backup_interface):
     with open(time_config_path, 'w') as f:
         json.dump(time_config, f, indent=2)
     log("备份过程完成")
-    setup_backup_ui(backup_interface, to_folder)
-    log("已更新备份界面信息")
+    return True
+
+
+def backup_folder_raw(config: dict):
+    """从配置字典直接执行备份（Backend 调用入口）"""
+    backup_folder(config)
 
 
 def normalize_path(path):
@@ -473,12 +462,12 @@ def normalize_path(path):
     return path.replace(os.sep, '/')
 
 
-def backup_folder_thread(backup_interface):
+def backup_folder_thread(config: dict):
     """
     在独立线程中运行备份任务。
     """
     try:
-        backup_folder(backup_interface)
+        backup_folder(config)
     except Exception as e:
         log(f"备份线程发生错误: {e}")
 

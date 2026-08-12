@@ -1,6 +1,5 @@
 import os,logging,shutil
 from datetime import datetime
-from qfluentwidgets import InfoBar, InfoBarPosition
 
 copyright = "\n© 2025 Time_Machine All rights reserved."
 
@@ -32,26 +31,14 @@ def log(message, level=logging.INFO):
 def importlog(message):
     log(f"{message} 的导入已完成。{copyright}")
 
-def clear_log_files(self, log_clear_button):
-    ''' 
-    # 清空日志文件
-    删除 `{%appdata%}/Bloret-Launcher/log` 文件夹下的所有文件。
-
-    ***
-
-    输入 :
-
-        - [x] self
-        - [x] log_clear_button
-    ***
-    输出 : 无
-    
-    ***
-    ###### Bloret Launcher 所有 © 2025 Bloret Launcher All rights reserved. © 2025 Bloret All rights reserved.
+def clear_log_files():
+    '''
+    清空日志文件。删除 `{%appdata%}/Bloret-Launcher/log` 文件夹下的所有文件。
     '''
     log_folder = os.path.join(os.getenv('APPDATA'), 'Bloret-Launcher', 'log')
-    file_num = len(os.listdir(log_folder))-1  # 减去一个正在使用的文件
+    count = 0
     if os.path.exists(log_folder) and os.path.isdir(log_folder):
+        file_num = len(os.listdir(log_folder))-1  # 减去一个正在使用的文件
         for filename in os.listdir(log_folder):
             file_path = os.path.join(log_folder, filename)
             try:
@@ -59,25 +46,11 @@ def clear_log_files(self, log_clear_button):
                     os.unlink(file_path)
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
-                # InfoBar.success(
-                #     title='🗑️ 清理成功',
-                #     content=f"已清理 {file_path}",
-                #     isClosable=True,
-                #     position=InfoBarPosition.TOP,
-                #     duration=5000,
-                #     parent=self
-                # )
+                count += 1
             except Exception as e:
                 log(f"Failed to delete {file_path}. Reason: {e}", logging.ERROR)
-    InfoBar.success(
-        title='🗑️ 清理成功',
-        content=f"已清理 {file_num} 个文件",
-        isClosable=True,
-        position=InfoBarPosition.TOP,
-        duration=5000,
-        parent=self
-    )
-    self.update_log_clear_button_text(log_clear_button)
+    log(f"已清理 {count} 个日志文件")
+    return count
     
     
 # importlog("LOG.PY")

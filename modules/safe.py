@@ -13,16 +13,14 @@ Safe.py
 '''
 
 import threading,logging,traceback,sys,webbrowser
-from PyQt5.QtWidgets import QApplication
-from PyQt5.uic import loadUi
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices
 from modules.log import log, importlog
 
 def handle_exception(e):
     '''
-    ## 显示错误跟踪窗口并报告异常
-
-    ***
-    ###### Bloret Launcher 所有 © 2025 Bloret Launcher All rights reserved. © 2025 Bloret All rights reserved.
+    ## 显示错误跟踪窗口并报告异常（RinUI 版本）
     '''
     exc_type = type(e)
     exc_value = e
@@ -31,45 +29,7 @@ def handle_exception(e):
     log("类型: {}".format(exc_type), logging.CRITICAL)
     log("信息: {}".format(exc_value), logging.CRITICAL)
     log("回溯: {}".format(traceback.format_tb(exc_traceback)), logging.CRITICAL)
-    
-    # 加载 ERROR.ui 文件
-    error_widget = loadUi("ui/ERROR.ui")
-    
-    # 填写信息到输入框
-    error_widget.type.setText(str(exc_type))
-    error_widget.value.setText(str(exc_value))
-    error_widget.traceback.setPlainText(''.join(traceback.format_tb(exc_traceback)))
-    
-    # 按钮功能实现
-    def copy_to_clipboard():
-        clipboard = QApplication.clipboard()
-        clipboard.setText('Bloret Launcher 错误报告信息：\n - 类型：{}\n - 信息：{}\n - 回溯：{}'.format(exc_type, exc_value, ''.join(traceback.format_tb(exc_traceback))))
-    
-    def report_issue():
-        webbrowser.open('https://github.com/BloretCrew/Bloret-Launcher/issues/new?template=BugReport.yml')
-    
-    def ignore_warning():
-        error_widget.close()
-    
-    # 连接按钮点击事件
-    error_widget.PushButton.clicked.connect(copy_to_clipboard)
-    error_widget.PushButton_2.clicked.connect(report_issue)
-    error_widget.PushButton_3.clicked.connect(ignore_warning)
-    
-    # 显示错误报告窗口
-    error_widget.show()
-    
-    # w = Dialog("Bloret Launcher 发生了一些小问题...", "类型: {}\n信息: {}\n回溯: {}\n如果您认为这是 Bloret Launcher 的问题，请提交此问题。\n按下确认按钮将以上信息复制到剪贴板".format(exc_type, exc_value, traceback.format_tb(exc_traceback)))
-    # w.setWindowIcon(QIcon('bloret.ico'))
-    # w.setWindowTitle("Bloret Launcher")
-    # if w.exec():
-    #     print('复制到剪贴板')
-    #     clipboard = QApplication.clipboard()
-    #     clipboard.setText("类型: {}\n信息: {}\n回溯: {}".format(exc_type, exc_value, ''.join(traceback.format_tb(exc_traceback))))
-    # else:
-    #     print('取消')
     sys.__excepthook__(exc_type, exc_value, exc_traceback)
-    # uic.loadUi("ui/ERROR.ui")
 
 sys.excepthook = handle_exception
 
